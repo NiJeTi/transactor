@@ -1,0 +1,16 @@
+all: true
+dir: 'internal/generated/mocks/{{replaceAll "github.com/nijeti/transactor" "" .SrcPackagePath}}'
+filename: "{{.InterfaceName | camelcase | firstLower}}.go"
+force-file-write: true
+formatter: goimports
+log-level: info
+structname: "Mock{{.InterfaceName | camelcase | firstUpper}}"
+pkgname: '{{.SrcPackageName}}'
+recursive: false
+require-template-schema-exists: true
+template: testify
+template-schema: '{{.Template}}.schema.json'
+packages:
+  github.com/nijeti/transactor:
+    config:
+      recursive: true
