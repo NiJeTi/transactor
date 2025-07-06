@@ -175,6 +175,9 @@ linters:
       enable-all: true
       disable:
         - require-error
+    wrapcheck:
+      extra-ignore-sigs:
+        - multierror.Append
   exclusions:
     generated: lax
     presets:
