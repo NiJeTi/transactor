@@ -1,7 +1,10 @@
 version: 2
 updates:
   - package-ecosystem: gomod
-    directory: /
+    directories:
+      - /
+      - /drivers/pgx/
+      - /drivers/sqlx/
     schedule:
       interval: monthly
 
