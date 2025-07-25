@@ -16,6 +16,7 @@ env:
   LINTER_VERSION: 'v2.2'
 
   PGX_DRIVER: './drivers/pgx/'
+  SQL_DRIVER: './drivers/sql/'
   SQLX_DRIVER: './drivers/sqlx/'
 
 jobs:
@@ -39,6 +40,9 @@ jobs:
 
       - name: 'Build pgx driver'
         run: go build ${{ env.PGX_DRIVER }}
+
+      - name: 'Build sql driver'
+        run: go build ${{ env.SQL_DRIVER }}
 
       - name: 'Build sqlx driver'
         run: go build ${{ env.SQLX_DRIVER }}
