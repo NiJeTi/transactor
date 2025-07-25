@@ -1,33 +1,36 @@
-package sqlx
+package pgx
 
 import (
 	"context"
 	"errors"
 	"fmt"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type ctxKey string
 
-const txKey ctxKey = "transactor_sqlx_tx"
+const txKey ctxKey = "transactor_pgx_tx"
 
 var ErrNoTx = errors.New("no transaction in progress")
 
 type Driver struct {
-	db *sqlx.DB
+	pool *pgxpool.Pool
 }
 
-func New(db *sqlx.DB) *Driver {
-	return &Driver{db: db}
+func New(pool *pgxpool.Pool) *Driver {
+	return &Driver{
+		pool: pool,
+	}
 }
 
 func (*Driver) Name() string {
-	return "sqlx"
+	return "pgx"
 }
 
 func (d *Driver) Begin(ctx context.Context) (context.Context, error) {
-	tx, err := d.db.BeginTxx(ctx, nil)
+	tx, err := d.pool.Begin(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to begin: %w", err)
 	}
@@ -41,7 +44,7 @@ func (d *Driver) Commit(ctx context.Context) error {
 		return err
 	}
 
-	if err := tx.Commit(); err != nil {
+	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf("failed to commit: %w", err)
 	}
 
@@ -54,21 +57,21 @@ func (d *Driver) Rollback(ctx context.Context) error {
 		return err
 	}
 
-	if err := tx.Rollback(); err != nil {
+	if err := tx.Rollback(ctx); err != nil {
 		return fmt.Errorf("failed to rollback: %w", err)
 	}
 
 	return nil
 }
 
-func (*Driver) Tx(ctx context.Context) (*sqlx.Tx, error) {
-	if tx, ok := ctx.Value(txKey).(*sqlx.Tx); ok {
+func (*Driver) Tx(ctx context.Context) (pgx.Tx, error) {
+	if tx, ok := ctx.Value(txKey).(pgx.Tx); ok {
 		return tx, nil
 	}
 
 	return nil, ErrNoTx
 }
 
-func (*Driver) setTx(ctx context.Context, tx *sqlx.Tx) context.Context {
+func (*Driver) setTx(ctx context.Context, tx pgx.Tx) context.Context {
 	return context.WithValue(ctx, txKey, tx)
 }
