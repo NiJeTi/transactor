@@ -4,6 +4,7 @@ updates:
     directories:
       - /
       - /drivers/pgx/
+      - /drivers/sql/
       - /drivers/sqlx/
     schedule:
       interval: monthly
