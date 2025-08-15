@@ -1,3 +1,3 @@
 module github.com/nijeti/transactor/drivers/sql
 
-go 1.24
+go 1.25
