@@ -7,8 +7,6 @@ import (
 	"github.com/hashicorp/go-multierror"
 )
 
-type Action func(ctx context.Context) error
-
 type Transactor struct {
 	drivers []Driver
 }
@@ -19,7 +17,9 @@ func Init(drivers ...Driver) *Transactor {
 	}
 }
 
-func (t *Transactor) Do(ctx context.Context, action Action) error {
+func (t *Transactor) Do(
+	ctx context.Context, action func(ctx context.Context) error,
+) error {
 	ctx, err := t.begin(ctx)
 	if err != nil {
 		return err
@@ -62,7 +62,7 @@ func (t *Transactor) begin(ctx context.Context) (context.Context, error) {
 }
 
 func (*Transactor) wrapAction(
-	ctx context.Context, action Action,
+	ctx context.Context, action func(ctx context.Context) error,
 ) (err error) {
 	defer func() {
 		if p := recover(); p != nil {
