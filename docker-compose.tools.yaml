@@ -1,0 +1,16 @@
+x-tool-conf: &tool-conf
+  tty: true
+  volumes:
+    - ./:/src
+  working_dir: /src
+
+services:
+  mockery:
+    image: vektra/mockery:3.5
+    <<: *tool-conf
+
+  lint:
+    image: golangci/golangci-lint:v2.4-alpine
+    <<: *tool-conf
+    command: ./scripts/lint.sh
+

@@ -39,7 +39,7 @@ func (d *Driver) Begin(ctx context.Context) (context.Context, error) {
 }
 
 func (d *Driver) Commit(ctx context.Context) error {
-	tx, err := d.Tx(ctx)
+	tx, err := d.getTx(ctx)
 	if err != nil {
 		return err
 	}
@@ -52,7 +52,7 @@ func (d *Driver) Commit(ctx context.Context) error {
 }
 
 func (d *Driver) Rollback(ctx context.Context) error {
-	tx, err := d.Tx(ctx)
+	tx, err := d.getTx(ctx)
 	if err != nil {
 		return err
 	}
@@ -64,7 +64,15 @@ func (d *Driver) Rollback(ctx context.Context) error {
 	return nil
 }
 
-func (*Driver) Tx(ctx context.Context) (pgx.Tx, error) {
+func (d *Driver) Tx(ctx context.Context, def Tx) Tx {
+	if tx, err := d.getTx(ctx); err == nil {
+		return tx
+	}
+
+	return def
+}
+
+func (*Driver) getTx(ctx context.Context) (pgx.Tx, error) {
 	if tx, ok := ctx.Value(txKey).(pgx.Tx); ok {
 		return tx, nil
 	}
