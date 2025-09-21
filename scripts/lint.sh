@@ -1,13 +1,15 @@
-#!/bin/bash
+#!/bin/sh
 
 set -e
 
+cfg="$PWD/.golangci.yaml"
 modules=$(find . -name "go.mod" -exec dirname {} \;)
 
 for mod in $modules; do
   echo "Linting $mod"
   
-  pushd "$mod"
-  golangci-lint run --fix --config ../.golangci.yaml
-  popd
+  (
+  cd "$mod"
+  golangci-lint run --fix --config "$cfg"
+  )
 done

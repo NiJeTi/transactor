@@ -1,21 +1,15 @@
-GOLANGCI_LINT_PACKAGE=github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.2.2
-MOCKERY_PACKAGE=github.com/vektra/mockery/v3@v3.5.1
-
-.PHONY: deps
-deps:
-	go install $(GOLANGCI_LINT_PACKAGE)
-	go install $(MOCKERY_PACKAGE)
+TOOLS=docker-compose.tools.yaml
 
 .PHONY: mocks
 mocks:
 	rm -rf ./internal/generated/mocks
 	mkdir -p ./internal/generated/mocks
 
-	mockery
+	docker compose -f $(TOOLS) run --rm mockery
 
 .PHONY: lint
 lint:
-	./scripts/lint.sh
+	docker compose -f $(TOOLS) run --rm lint
 
 .PHONY: test
 test:

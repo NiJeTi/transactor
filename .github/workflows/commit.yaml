@@ -1,23 +1,22 @@
-name: 'Validate'
+name: 'Commit'
 
 on:
   pull_request:
     branches:
       - 'main'
-    paths:
-      - '.github/**'
-      - 'drivers/**'
-      - '.golangci.yaml'
-      - '*.go'
-      - 'go.*'
+  push:
+    branches:
+      - 'main'
 
 env:
   PGX_DRIVER: './drivers/pgx/'
   SQL_DRIVER: './drivers/sql/'
   SQLX_DRIVER: './drivers/sqlx/'
-
+  
 jobs:
   build:
+    if: github.event_name == 'pull_request'
+    
     runs-on: ubuntu-latest
 
     permissions:
@@ -45,6 +44,8 @@ jobs:
         run: go build ${{ env.SQLX_DRIVER }}
 
   prelint:
+    if: github.event_name == 'pull_request'
+    
     runs-on: ubuntu-latest
 
     permissions:
@@ -62,9 +63,9 @@ jobs:
         run: echo "modules=$(go list -m -json | jq -s '.' | jq -c '[.[].Dir]')" >> $GITHUB_OUTPUT
 
   lint:
-    runs-on: ubuntu-latest
-
     needs: prelint
+
+    runs-on: ubuntu-latest
 
     permissions:
       contents: read
