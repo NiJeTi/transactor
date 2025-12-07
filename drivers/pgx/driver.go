@@ -9,9 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type ctxKey string
-
-const txKey ctxKey = "transactor_pgx_tx"
+type keyTx struct{}
 
 var ErrNoTx = errors.New("no transaction in progress")
 
@@ -30,20 +28,16 @@ func (*Driver) Name() string {
 }
 
 func (d *Driver) Begin(ctx context.Context) (context.Context, error) {
-	if _, err := d.getTx(ctx); err == nil {
-		return ctx, nil
-	}
-
 	tx, err := d.pool.Begin(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to begin: %w", err)
 	}
 
-	return d.setTx(ctx, tx), nil
+	return setTx(ctx, tx), nil
 }
 
-func (d *Driver) Commit(ctx context.Context) error {
-	tx, err := d.getTx(ctx)
+func (*Driver) Commit(ctx context.Context) error {
+	tx, err := getTx(ctx)
 	if err != nil {
 		return err
 	}
@@ -55,8 +49,8 @@ func (d *Driver) Commit(ctx context.Context) error {
 	return nil
 }
 
-func (d *Driver) Rollback(ctx context.Context) error {
-	tx, err := d.getTx(ctx)
+func (*Driver) Rollback(ctx context.Context) error {
+	tx, err := getTx(ctx)
 	if err != nil {
 		return err
 	}
@@ -68,22 +62,22 @@ func (d *Driver) Rollback(ctx context.Context) error {
 	return nil
 }
 
-func (d *Driver) Tx(ctx context.Context, def Tx) Tx {
-	if tx, err := d.getTx(ctx); err == nil {
+func (*Driver) Tx(ctx context.Context, def Tx) Tx {
+	if tx, err := getTx(ctx); err == nil {
 		return tx
 	}
 
 	return def
 }
 
-func (*Driver) getTx(ctx context.Context) (pgx.Tx, error) {
-	if tx, ok := ctx.Value(txKey).(pgx.Tx); ok {
+func getTx(ctx context.Context) (pgx.Tx, error) {
+	if tx, ok := ctx.Value(keyTx{}).(pgx.Tx); ok {
 		return tx, nil
 	}
 
 	return nil, ErrNoTx
 }
 
-func (*Driver) setTx(ctx context.Context, tx pgx.Tx) context.Context {
-	return context.WithValue(ctx, txKey, tx)
+func setTx(ctx context.Context, tx pgx.Tx) context.Context {
+	return context.WithValue(ctx, keyTx{}, tx)
 }

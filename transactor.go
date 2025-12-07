@@ -7,19 +7,30 @@ import (
 	"github.com/hashicorp/go-multierror"
 )
 
+type (
+	keyNested struct{}
+	valNested struct{}
+)
+
 type Transactor struct {
-	drivers []Driver
+	driver Driver
 }
 
-func Init(drivers ...Driver) *Transactor {
+func New(driver Driver) *Transactor {
 	return &Transactor{
-		drivers: drivers,
+		driver: driver,
 	}
 }
 
 func (t *Transactor) Do(
 	ctx context.Context, action func(ctx context.Context) error,
 ) error {
+	if isNested(ctx) {
+		return action(ctx)
+	}
+
+	ctx = setIsNested(ctx)
+
 	ctx, err := t.begin(ctx)
 	if err != nil {
 		return err
@@ -47,15 +58,11 @@ func (t *Transactor) Do(
 }
 
 func (t *Transactor) begin(ctx context.Context) (context.Context, error) {
-	for _, d := range t.drivers {
-		dCtx, err := d.Begin(ctx)
-		if err != nil {
-			return nil, fmt.Errorf(
-				"failed to begin %s transaction: %w", d.Name(), err,
-			)
-		}
-
-		ctx = dCtx
+	ctx, err := t.driver.Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"failed to begin transaction: %w", err,
+		)
 	}
 
 	return ctx, nil
@@ -78,53 +85,27 @@ func (*Transactor) wrapAction(
 }
 
 func (t *Transactor) rollback(ctx context.Context) error {
-	var resultErr error
-
-	for _, d := range t.drivers {
-		if err := t.wrapRollback(ctx, d); err != nil {
-			resultErr = multierror.Append(resultErr, err)
-		}
+	if err := t.driver.Rollback(ctx); err != nil {
+		return fmt.Errorf("rollback error: %w", err)
 	}
 
-	return resultErr
-}
-
-func (*Transactor) wrapRollback(ctx context.Context, d Driver) (err error) {
-	defer func() {
-		if p := recover(); p != nil {
-			err = fmt.Errorf("%s rollback panic: %v", d.Name(), p)
-		}
-	}()
-
-	if err := d.Rollback(ctx); err != nil {
-		return fmt.Errorf("%s rollback error: %w", d.Name(), err)
-	}
-
-	return
+	return nil
 }
 
 func (t *Transactor) commit(ctx context.Context) error {
-	var resultErr error
-
-	for _, d := range t.drivers {
-		if err := t.wrapCommit(ctx, d); err != nil {
-			resultErr = multierror.Append(resultErr, err)
-		}
+	if err := t.driver.Commit(ctx); err != nil {
+		return fmt.Errorf("commit error: %w", err)
 	}
 
-	return resultErr
+	return nil
 }
 
-func (*Transactor) wrapCommit(ctx context.Context, d Driver) (err error) {
-	defer func() {
-		if p := recover(); p != nil {
-			err = fmt.Errorf("%s commit panic: %v", d.Name(), p)
-		}
-	}()
+func isNested(ctx context.Context) bool {
+	v := ctx.Value(keyNested{})
 
-	if err := d.Commit(ctx); err != nil {
-		return fmt.Errorf("%s commit error: %w", d.Name(), err)
-	}
+	return v != nil
+}
 
-	return
+func setIsNested(ctx context.Context) context.Context {
+	return context.WithValue(ctx, keyNested{}, valNested{})
 }
