@@ -1,6 +1,6 @@
 module github.com/nijeti/transactor
 
-go 1.25
+go 1.25.5
 
 require (
 	github.com/hashicorp/go-multierror v1.1.1

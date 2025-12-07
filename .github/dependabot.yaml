@@ -4,12 +4,15 @@ updates:
     directories:
       - /
       - /drivers/pgx/
-      - /drivers/sql/
-      - /drivers/sqlx/
     schedule:
       interval: monthly
 
   - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+      
+  - package-ecosystem: docker-compose
     directory: /
     schedule:
       interval: monthly

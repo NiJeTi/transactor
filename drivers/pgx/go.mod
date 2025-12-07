@@ -1,6 +1,6 @@
 module github.com/nijeti/transactor/drivers/pgx
 
-go 1.25
+go 1.25.5
 
 require github.com/jackc/pgx/v5 v5.7.5
 
