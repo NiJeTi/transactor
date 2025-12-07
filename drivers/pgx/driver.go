@@ -23,10 +23,6 @@ func New(pool *pgxpool.Pool) *Driver {
 	}
 }
 
-func (*Driver) Name() string {
-	return "pgx"
-}
-
 func (d *Driver) Begin(ctx context.Context) (context.Context, error) {
 	tx, err := d.pool.Begin(ctx)
 	if err != nil {
