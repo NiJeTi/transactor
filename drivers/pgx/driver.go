@@ -30,6 +30,10 @@ func (*Driver) Name() string {
 }
 
 func (d *Driver) Begin(ctx context.Context) (context.Context, error) {
+	if _, err := d.getTx(ctx); err == nil {
+		return ctx, nil
+	}
+
 	tx, err := d.pool.Begin(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to begin: %w", err)
