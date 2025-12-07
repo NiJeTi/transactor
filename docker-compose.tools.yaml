@@ -6,7 +6,7 @@ x-tool-conf: &tool-conf
 
 services:
   mockery:
-    image: vektra/mockery:3.5
+    image: vektra/mockery:3.6
     <<: *tool-conf
 
   lint:
